@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+  <title>E.V.A Manager</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/style.css">
+
+  <script type="importmap">
+    {
+      "imports": {
+        "@material/web/": "https://esm.run/@material/web/",
+        "tslib": "https://esm.run/tslib",
+        "lit": "https://esm.run/lit",
+        "kernelsu": "https://esm.run/kernelsu"
+      }
+    }
+  </script>
+  <script type="module">
+    import '@material/web/all.js';
+    import {styles as typescaleStyles} from '@material/web/typography/md-typescale-styles.js';
+    document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
+  </script>
+</head>
+<body class="loaded">
+
+  <div class="view-viewport">
+    <div class="views-wrapper" id="views-wrapper">
+      
+      <!-- DASHBOARD TAB -->
+      <section id="view-dashboard" class="nav-view">
+        <div class="top-badge">E.V.A Manager</div>
+
+        <div class="hero-banner">
+          <img src="assets/banner.jpg" alt="Banner EVA" onerror="this.style.display='none'">
+          <div class="hero-overlay">
+            <div style="color:#fff; font-size:24px; font-weight:700; margin:0 0 4px 0;">E.V.A</div>
+            <div style="color:#aaa; font-size:12px; margin:0 0 16px 0; font-family:'Roboto Mono', monospace;">Enhanced Visual-render Affinity</div>
+            <div class="hero-badges-wrapper">
+              <div id="status-indicator" class="hero-status-pill">Memuat...</div>
+              <div id="pid-indicator" class="hero-pid-pill">PID: NULL</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 16px; margin-bottom: 8px;">
+          <label class="control-item" style="margin-bottom: 0; background: transparent;">
+            <md-ripple></md-ripple> 
+            <div class="control-content">
+              <md-icon class="control-icon">power_settings_new</md-icon>
+              <div class="control-text"><span>Master Switch</span><br><small>Enable/Disable E.V.A globally</small></div>
+            </div>
+            <md-switch id="switch-enable" icons onchange="updateSysctl('kernel.sched_eva_enable', this.selected ? '1' : '0')" style="z-index:1;"></md-switch>
+          </label>
+        </div>
+
+        <div class="card" style="padding: 16px;">
+          <label class="control-item" style="margin-bottom: 0; background: transparent;">
+            <md-ripple></md-ripple> 
+            <div class="control-content">
+              <md-icon class="control-icon">radar</md-icon>
+              <div class="control-text"><span>Autonomous Tracking</span><br><small>Auto-detect foreground games</small></div>
+            </div>
+            <md-switch id="switch-auto" icons onchange="updateSysctl('kernel.sched_eva_auto_detect', this.selected ? '1' : '0')" style="z-index:1;"></md-switch>
+          </label>
+        </div>
+      </section>
+
+      <!-- CONFIG TAB -->
+      <section id="view-config" class="nav-view">
+        <div class="card">
+          <div class="card-title"><md-icon>memory</md-icon> Smart Mode Tuning</div>
+          <p style="font-size: 13px; color: var(--md-sys-color-on-surface-variant); margin-bottom: 12px; margin-top: -8px;">
+            Atur logika CPU Affinity untuk thread rendering.
+          </p>
+          <select id="select-smart-mode" onchange="updateSysctl('kernel.sched_eva_smart_mode', this.value)">
+            <option value="0">Mode 0: Off (Revert / Idle)</option>
+            <option value="1">Mode 1: Hard Pin (Force Big Cores)</option>
+            <option value="2">Mode 2: Smart Adaptive (Auto-Scale)</option>
+          </select>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><md-icon>speed</md-icon> Affinity Parameters</div>
+          
+          <div class="slider-box">
+            <div class="slider-header">
+              <span>Nice Value (Priority)</span>
+              <span class="slider-val"><span id="val-nice">-10</span></span>
+            </div>
+            <md-slider id="slider-nice" min="-15" max="-1" value="-10" step="1" style="width: 100%; margin-top: 12px;" onchange="updateSysctl('kernel.sched_eva_nice', this.value)"></md-slider>
+          </div>
+
+          <div class="slider-box">
+            <div class="slider-header">
+              <span>Throttle Freq Limit (kHz)</span>
+              <span class="slider-val"><span id="val-freq">1400000</span></span>
+            </div>
+            <md-slider id="slider-freq" min="800000" max="2500000" value="1400000" step="100000" style="width: 100%; margin-top: 12px;" onchange="updateSysctl('kernel.sched_eva_throttle_freq', this.value)"></md-slider>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><md-icon>analytics</md-icon> Utilization Thresholds</div>
+          <p style="font-size: 11px; font-weight:700; color: var(--md-sys-color-on-surface-variant); margin-top: -8px;">
+            Wajib: Light Util harus &le; Heavy Util!
+          </p>
+
+          <div class="slider-box">
+            <div class="slider-header">
+              <span>Heavy Util (Pin to Big)</span>
+              <span class="slider-val"><span id="val-heavy">300</span></span>
+            </div>
+            <md-slider id="slider-heavy" min="0" max="1024" value="300" step="10" style="width: 100%; margin-top: 12px;" onchange="updateSysctl('kernel.sched_eva_heavy_util', this.value)"></md-slider>
+          </div>
+
+          <div class="slider-box">
+            <div class="slider-header">
+              <span>Light Util (Unpin)</span>
+              <span class="slider-val"><span id="val-light">100</span></span>
+            </div>
+            <md-slider id="slider-light" min="0" max="1024" value="100" step="10" style="width: 100%; margin-top: 12px;" onchange="updateSysctl('kernel.sched_eva_light_util', this.value)"></md-slider>
+          </div>
+        </div>
+      </section>
+
+      <!-- APPS TAB -->
+      <section id="view-target-apps" class="nav-view">
+        <div id="app-list-container" style="display: flex; flex-direction: column; gap: 4px; padding-top: 8px;">
+           <div style="text-align:center; padding: 24px; color: var(--md-sys-color-primary);"><md-icon class="spinning">sync</md-icon><br>Mendeteksi aplikasi...</div>
+        </div>
+      </section>
+
+      <!-- DEV TAB -->
+      <section id="view-dev" class="nav-view">
+        <div class="card" style="padding: 24px; text-align: center; border-radius: 28px;">
+          <img src="assets/eva.jpg" alt="Dev" onerror="this.style.display='none'" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 16px; object-fit: cover; border: 3px solid var(--md-sys-color-primary);">
+          <h2 style="margin: 0; font-size: 24px; color: var(--md-sys-color-on-surface);">E.V.A Project</h2>
+          <p style="margin: 4px 0 24px 0; font-size: 14px; color: var(--md-sys-color-on-surface-variant);">Enhanced Visual-render Affinity<br>v4.0.0</p>
+          
+          <div style="text-align: left; background: var(--md-sys-color-surface-variant); padding: 16px; border-radius: 16px; margin-bottom: 24px;">
+            <p style="margin: 0; font-size: 13px; color: var(--md-sys-color-on-surface-variant); line-height: 1.5;">
+              <strong>Developer:</strong> @RapliVx<br>
+              <strong>Description:</strong> A resilient background daemon and kernel scheduler optimizer for achieving maximum performance on your favorite games.
+            </p>
+          </div>
+
+          <md-filled-button onclick="window.open('https://github.com/RapliVx', '_blank')" style="width: 100%;">
+            <md-icon slot="icon">code</md-icon>
+            View on GitHub
+          </md-filled-button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- FLOATING NAV -->
+  <nav class="floating-nav">
+    <div class="nav-item active" data-index="0">
+      <md-ripple></md-ripple> 
+      <md-icon>dashboard</md-icon><span class="nav-text">Status</span>
+    </div>
+    <div class="nav-item" data-index="1">
+      <md-ripple></md-ripple> 
+      <md-icon>tune</md-icon><span class="nav-text">Config</span>
+    </div>
+    <div class="nav-item" data-index="2">
+      <md-ripple></md-ripple> 
+      <md-icon>gamepad</md-icon><span class="nav-text">Inject</span>
+    </div>
+    <div class="nav-item" data-index="3">
+      <md-ripple></md-ripple> 
+      <md-icon>info</md-icon><span class="nav-text">About</span>
+    </div>
+  </nav>
+
+  <script type="module" src="assets/script.js"></script>
+</body>
+</html>
