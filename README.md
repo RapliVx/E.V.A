@@ -1,10 +1,10 @@
 # E.V.A (Enhanced Visual-render Affinity)
 
-Project E.V.A is an advanced performance optimizer designed for Android devices, integrating a custom kernel driver with a robust KernelSU module. The primary goal is to provide dynamic, autonomous performance tuning based on process identifiers (PID) and system state, specifically tailored for intensive workloads such as gaming.
+E.V.A is an advanced performance optimizer designed for Android devices, integrating a custom kernel driver with a robust KernelSU module. The primary goal is to provide dynamic, autonomous performance tuning based on process identifiers (PID) and system state, specifically tailored for intensive workloads such as gaming.
 
 ## Architecture
 
-Project E.V.A consists of three primary components:
+E.V.A consists of three primary components:
 
 1.  **Kernel Modifications (C)**:
     Located in the `kernel/` directory. This includes modifications to the CPU scheduler (`eva.c`) to provide aggressive performance scaling based on the targeted PID.
@@ -15,7 +15,7 @@ Project E.V.A consists of three primary components:
 
 ## Kernel Implementation
 
-To implement Project E.V.A in your kernel tree, simply run the automated setup script from the root of your kernel source tree:
+To implement  E.V.A in your kernel tree, simply run the automated setup script from the root of your kernel source tree:
 
 ```bash
 bash <(curl -sL https://raw.githubusercontent.com/RapliVx/E.V.A/main/setup.sh)
