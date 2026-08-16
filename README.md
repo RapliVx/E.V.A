@@ -1,4 +1,4 @@
-# Project E.V.A
+# E.V.A (Enhanced Visual-render Affinity)
 
 Project E.V.A is an advanced performance optimizer designed for Android devices, integrating a custom kernel driver with a robust KernelSU module. The primary goal is to provide dynamic, autonomous performance tuning based on process identifiers (PID) and system state, specifically tailored for intensive workloads such as gaming.
 
