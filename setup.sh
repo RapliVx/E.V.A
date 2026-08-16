@@ -46,12 +46,12 @@ if ! grep -q "config SCHED_EVA" "$KCONFIG_TARGET"; then
     cat << 'EOF' >> "$KCONFIG_TARGET"
 
 config SCHED_EVA
-	bool "Project E.V.A Performance Optimizer"
+	bool "Enhanced Visual-render Affinity (E.V.A)"
 	default y
 	help
-	  Enable Project E.V.A.
-	  An advanced dynamic performance optimizer designed to inject 
-	  task PIDs and boost foreground workloads automatically.
+	  E.V.A optimizes game rendering threads by aggressively pinning them
+	  to big/prime cores and applying optimal nice values, overriding the
+	  CFS scheduler. Activated on-demand via sysctl.
 EOF
     echo "    -> Successfully added CONFIG_SCHED_EVA to $KCONFIG_TARGET"
 else
