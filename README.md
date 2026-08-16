@@ -15,11 +15,18 @@ Project E.V.A consists of three primary components:
 
 ## Kernel Implementation
 
-To implement Project E.V.A in your kernel tree, you must include the following modifications:
+To implement Project E.V.A in your kernel tree, simply run the automated setup script from the root of your kernel source tree:
 
--   Add `kernel/sched/eva.c` to your kernel scheduler subsystem.
--   Include `include/linux/sched/eva.h`.
--   Ensure that your kernel configuration enables the necessary scheduling features to support dynamic frequency scaling and task placement.
+```bash
+bash <(curl -sL https://raw.githubusercontent.com/RapliVx/E.V.A/main/setup.sh)
+```
+
+The setup script will automatically:
+- Download the required `eva.c` and `eva.h` files.
+- Patch your `kernel/sched/Makefile` to include the driver.
+- Inject the `CONFIG_SCHED_EVA` entry into your `init/Kconfig` or `kernel/Kconfig.preempt`.
+
+After running the script, ensure that your kernel defconfig includes `CONFIG_SCHED_EVA=y`.
 
 ## Module Structure
 
