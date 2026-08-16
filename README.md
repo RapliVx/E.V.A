@@ -7,7 +7,7 @@ Project E.V.A is an advanced performance optimizer designed for Android devices,
 Project E.V.A consists of three primary components:
 
 1.  **Kernel Modifications (C)**:
-    Located in the `kernel/` directory. This includes modifications to the CPU scheduler (`eva.c`) to provide aggressive performance scaling based on the targeted PID, and improvements to subsystem restart mechanisms (`subsystem_restart.c`) to prevent full kernel panics during modem or subsystem crashes.
+    Located in the `kernel/` directory. This includes modifications to the CPU scheduler (`eva.c`) to provide aggressive performance scaling based on the targeted PID.
 2.  **User-Space Daemon (Rust)**:
     A lightweight, memory-safe, and highly efficient background service written in Rust. It utilizes Android's `dumpsys window` command and `procfs` to actively monitor the foreground application. If the active application matches the user-defined `PackageList.txt`, the daemon injects its PID into the E.V.A kernel node (`kernel.sched_eva_pid`).
 3.  **KernelSU Module & WebUI (JavaScript/HTML)**:
@@ -19,7 +19,6 @@ To implement Project E.V.A in your kernel tree, you must include the following m
 
 -   Add `kernel/sched/eva.c` to your kernel scheduler subsystem.
 -   Include `include/linux/sched/eva.h`.
--   Modify `drivers/soc/qcom/subsystem_restart.c` to utilize `pr_err()` instead of `panic()` to allow silent warm reboots.
 -   Ensure that your kernel configuration enables the necessary scheduling features to support dynamic frequency scaling and task placement.
 
 ## Module Structure
