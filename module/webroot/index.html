@@ -58,16 +58,7 @@
           </label>
         </div>
 
-        <div class="card" style="padding: 16px;">
-          <label class="control-item" style="margin-bottom: 0; background: transparent;">
-            <md-ripple></md-ripple> 
-            <div class="control-content">
-              <md-icon class="control-icon">radar</md-icon>
-              <div class="control-text"><span>Autonomous Tracking</span><br><small>Auto-detect foreground games</small></div>
-            </div>
-            <md-switch id="switch-auto" icons onchange="updateSysctl('kernel.sched_eva_auto_detect', this.selected ? '1' : '0')" style="z-index:1;"></md-switch>
-          </label>
-        </div>
+
       </section>
 
       <!-- CONFIG TAB -->
@@ -101,6 +92,14 @@
               <span class="slider-val"><span id="val-freq">1400000</span></span>
             </div>
             <md-slider id="slider-freq" min="800000" max="2500000" value="1400000" step="100000" style="width: 100%; margin-top: 12px;" onchange="updateSysctl('kernel.sched_eva_throttle_freq', this.value)"></md-slider>
+          </div>
+
+          <div class="slider-box">
+            <div class="slider-header">
+              <span>Smart Polling Interval (ms)</span>
+              <span class="slider-val"><span id="val-poll">16</span></span>
+            </div>
+            <md-slider id="slider-poll" min="1" max="1000" value="16" step="1" style="width: 100%; margin-top: 12px;" onchange="updateSysctl('kernel.sched_eva_poll_ms', this.value)"></md-slider>
           </div>
         </div>
 

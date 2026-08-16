@@ -14,11 +14,14 @@ if [ -f "$MODPATH/evadaemon" ]; then
     nohup "$MODPATH/evadaemon" "$MODPATH/PackageList.txt" > /dev/null 2>&1 &
 fi
 
+LAST_STATE=""
+LAST_PID=""
+
 while true; do
     # 1. Menentukan State dari E.V.A Kernel
-    if [ -e "/proc/sys/kernel/sched_eva_pid" ]; then
-        EVA_ENABLE=$(cat /proc/sys/kernel/sched_eva_enable 2>/dev/null)
-        EVA_PID=$(cat /proc/sys/kernel/sched_eva_pid 2>/dev/null)
+    if [ -f "/proc/sys/kernel/sched_eva_pid" ]; then
+        read -r EVA_ENABLE < /proc/sys/kernel/sched_eva_enable 2>/dev/null
+        read -r EVA_PID < /proc/sys/kernel/sched_eva_pid 2>/dev/null
         
         if [ "$EVA_ENABLE" != "1" ]; then
             state="EvaDisabled"
@@ -31,31 +34,25 @@ while true; do
         state="Offline"
     fi
 
-    # 2. Update module.prop menggunakan style regex
-    current_desc="$(grep '^description=' "$PROP" 2>/dev/null)"
-    
-    case "$state" in
-        EvaActive)
-            if ! echo "$current_desc" | grep -q "Active"; then
+    # 2. Update module.prop jika state atau PID berubah
+    if { [ "$state" != "$LAST_STATE" ]; } || { [ "$state" = "EvaActive" ] && [ "$EVA_PID" != "$LAST_PID" ]; }; then
+        case "$state" in
+            EvaActive)
                 sed -Ei "s/^description=(\[.*][[:space:]]*)?/description=[ ✨ Active (PID: ${EVA_PID}) ] /g" "$PROP"
-            fi
-            ;;
-        EvaStandby)
-            if ! echo "$current_desc" | grep -q "Standby"; then
+                ;;
+            EvaStandby)
                 sed -Ei "s/^description=(\[.*][[:space:]]*)?/description=[ 😴 Standby (Auto-Detect) ] /g" "$PROP"
-            fi
-            ;;
-        EvaDisabled)
-            if ! echo "$current_desc" | grep -q "Disabled"; then
+                ;;
+            EvaDisabled)
                 sed -Ei "s/^description=(\[.*][[:space:]]*)?/description=[ ⏸️ Disabled ] /g" "$PROP"
-            fi
-            ;;
-        *)
-            if ! echo "$current_desc" | grep -q "Offline"; then
+                ;;
+            *)
                 sed -Ei "s/^description=(\[.*][[:space:]]*)?/description=[ ❌ Kernel Unsupported ] /g" "$PROP"
-            fi
-            ;;
-    esac
+                ;;
+        esac
+        LAST_STATE="$state"
+        LAST_PID="$EVA_PID"
+    fi
     
     sleep 5
 done

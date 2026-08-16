@@ -35,8 +35,6 @@ async function checkEvaSupport() {
   if (isSupported === null || isSupported === "") {
     toast("FATAL: E.V.A tidak ditemukan di kernel ini!");
     document.getElementById('switch-enable').disabled = true;
-    const autoSwitch = document.getElementById('switch-auto');
-    if (autoSwitch) autoSwitch.disabled = true;
     return false;
   }
   return true;
@@ -45,22 +43,23 @@ async function checkEvaSupport() {
 async function loadEvaConfig() {
   if (!(await checkEvaSupport())) return;
 
-  const enable = await getSysctl('kernel.sched_eva_enable');
-  const autoDetect = await getSysctl('kernel.sched_eva_auto_detect');
-  const smartMode = await getSysctl('kernel.sched_eva_smart_mode');
-  const nice = await getSysctl('kernel.sched_eva_nice');
-  const freq = await getSysctl('kernel.sched_eva_throttle_freq');
-  const heavy = await getSysctl('kernel.sched_eva_heavy_util');
-  const light = await getSysctl('kernel.sched_eva_light_util');
+  const [enable, smartMode, nice, freq, heavy, light, poll] = await Promise.all([
+    getSysctl('kernel.sched_eva_enable'),
+    getSysctl('kernel.sched_eva_smart_mode'),
+    getSysctl('kernel.sched_eva_nice'),
+    getSysctl('kernel.sched_eva_throttle_freq'),
+    getSysctl('kernel.sched_eva_heavy_util'),
+    getSysctl('kernel.sched_eva_light_util'),
+    getSysctl('kernel.sched_eva_poll_ms')
+  ]);
 
   if(enable) document.getElementById('switch-enable').selected = (enable === '1');
-  const autoSwitch = document.getElementById('switch-auto');
-  if(autoDetect && autoSwitch) autoSwitch.selected = (autoDetect === '1');
   if(smartMode) document.getElementById('select-smart-mode').value = smartMode;
   if(nice) { document.getElementById('slider-nice').value = nice; document.getElementById('val-nice').innerText = nice; }
   if(freq) { document.getElementById('slider-freq').value = freq; document.getElementById('val-freq').innerText = freq; }
   if(heavy) { document.getElementById('slider-heavy').value = heavy; document.getElementById('val-heavy').innerText = heavy; }
   if(light) { document.getElementById('slider-light').value = light; document.getElementById('val-light').innerText = light; }
+  if(poll) { document.getElementById('slider-poll').value = poll; document.getElementById('val-poll').innerText = poll; }
   
   refreshStats();
 }
@@ -71,7 +70,6 @@ window.refreshStats = async function() {
   
   try {
     const pid = await getSysctl('kernel.sched_eva_pid');
-    const autoDetect = await getSysctl('kernel.sched_eva_auto_detect');
     
     if (pid && pid !== "0" && pid !== "") {
       statusPill.innerText = 'ACTIVE';
@@ -82,17 +80,10 @@ window.refreshStats = async function() {
       pidPill.style.background = 'var(--md-sys-color-primary-container)';
       pidPill.style.color = 'var(--md-sys-color-on-primary-container)';
     } else {
-      if (autoDetect === '1') {
-        statusPill.innerText = 'AUTO-DETECT';
-        pidPill.innerText = `PID: STANDBY`;
-        pidPill.style.background = 'var(--md-sys-color-secondary-container)';
-        pidPill.style.color = 'var(--md-sys-color-on-secondary-container)';
-      } else {
-        statusPill.innerText = 'IDLE';
-        pidPill.innerText = `PID: NULL`;
-        pidPill.style.background = 'var(--md-sys-color-error-container)';
-        pidPill.style.color = 'var(--md-sys-color-on-error-container)';
-      }
+      statusPill.innerText = 'STANDBY';
+      pidPill.innerText = `PID: NULL`;
+      pidPill.style.background = 'var(--md-sys-color-secondary-container)';
+      pidPill.style.color = 'var(--md-sys-color-on-secondary-container)';
     }
   } catch (e) { 
       console.error("Gagal memuat statistik banner."); 
@@ -134,20 +125,25 @@ window.toggleBoost = async function(pkgName, enable) {
 async function loadAppList() {
   const container = document.getElementById("app-list-container");
   try {
-    const userPkgsList = await listPackages('user');
-    let fullInfo = [];
-    if (userPkgsList && userPkgsList.length > 0) fullInfo = await getPackagesInfo(userPkgsList);
+    const [userPkgsList, pmListOut, pListOut] = await Promise.all([
+      listPackages('user'),
+      exec("pm list packages -3 2>/dev/null || true"),
+      exec("cat /data/adb/modules/evamgr/PackageList.txt 2>/dev/null || true")
+    ]);
 
-    const t = await exec("pm list packages -3 2>/dev/null || true");
+    let fullInfo = [];
+    if (userPkgsList && userPkgsList.length > 0) {
+      fullInfo = await getPackagesInfo(userPkgsList);
+    }
+
     let thirdPartyPkgs = new Set();
-    if (t) {
-        t.split("\n").forEach(e => {
+    if (pmListOut) {
+        pmListOut.split("\n").forEach(e => {
             const pkg = e.replace("package:", "").trim();
             if (pkg) thirdPartyPkgs.add(pkg);
         });
     }
 
-    const pListOut = await exec("cat /data/adb/modules/evamgr/PackageList.txt 2>/dev/null || true");
     let enabledPkgs = new Set();
     if (pListOut) {
         pListOut.split("\n").forEach(e => {
@@ -210,6 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
   linkSlider('slider-freq', 'val-freq');
   linkSlider('slider-heavy', 'val-heavy');
   linkSlider('slider-light', 'val-light');
+  linkSlider('slider-poll', 'val-poll');
 
   const navItems = document.querySelectorAll('.nav-item');
   const wrapper = document.getElementById('views-wrapper');
