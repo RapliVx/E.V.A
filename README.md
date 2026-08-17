@@ -40,7 +40,7 @@ To implement E.V.A in your kernel tree, simply run the automated setup script fr
 
 ```bash
 cd /path/to/your/kernel/source
-bash /path/to/EVA/kernel/setup.sh
+curl -LSs "https://raw.githubusercontent.com/RapliVx/E.V.A/main/kernel/setup.sh" | bash -s main
 ```
 
 The setup script will automatically:
