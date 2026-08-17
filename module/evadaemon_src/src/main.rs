@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 use std::fs::{self, File};
 use std::io::Read;
-use std::path::Path;
 use std::thread;
 use std::time::{Duration, SystemTime};
 use std::process::Command;
