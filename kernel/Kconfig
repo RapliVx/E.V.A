@@ -1,3 +1,5 @@
+menu "Enhanced Visual-render Affinity (E.V.A)"
+
 config SCHED_EVA
 	bool "Enhanced Visual-render Affinity (E.V.A)"
 	default y
@@ -5,3 +7,5 @@ config SCHED_EVA
 	  E.V.A optimizes game rendering threads by aggressively pinning them
 	  to big/prime cores and applying optimal nice values, overriding the
 	  CFS scheduler. Activated on-demand via sysctl.
+
+endmenu

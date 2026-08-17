@@ -31,11 +31,23 @@ initialize_variables() {
 # Reverts modifications made by this script
 perform_cleanup() {
     echo "[+] Cleaning up..."
-    [ -L "$SCHED_DIR/eva" ] && rm "$SCHED_DIR/eva" && echo "[-] eva symlink removed."
+    [ -d "$SCHED_DIR/eva" ] && rm -rf "$SCHED_DIR/eva" && echo "[-] eva directory removed."
+    grep -q "# E.V.A" "$SCHED_MAKEFILE" && sed -i '/# E.V.A/d' "$SCHED_MAKEFILE"
     grep -q "eva/" "$SCHED_MAKEFILE" && sed -i '/eva\//d' "$SCHED_MAKEFILE" && echo "[-] Makefile reverted."
     
     # Revert Kconfig source inclusion
     grep -q "kernel/sched/eva/Kconfig" "$KCONFIG_TARGET" && sed -i '/kernel\/sched\/eva\/Kconfig/d' "$KCONFIG_TARGET" && echo "[-] Kconfig reverted."
+
+    # Revert defconfigs
+    if ls "$GKI_ROOT"/arch/arm64/configs/*defconfig* 1> /dev/null 2>&1; then
+        for defconfig in "$GKI_ROOT"/arch/arm64/configs/*defconfig*; do
+            if [ -f "$defconfig" ] && grep -q "CONFIG_SCHED_EVA=y" "$defconfig"; then
+                sed -i '/# E.V.A/d' "$defconfig"
+                sed -i '/CONFIG_SCHED_EVA=y/d' "$defconfig"
+                echo "[-] Reverted defconfig: $(basename "$defconfig")"
+            fi
+        done
+    fi
 
     if [ -d "$GKI_ROOT/EVA" ]; then
         rm -rf "$GKI_ROOT/EVA" && echo "[-] EVA directory deleted."
@@ -66,15 +78,37 @@ setup_eva() {
         git checkout "$1" && echo "[-] Checked out $1." || echo "[-] Checkout default branch"
     fi
     
-    cd "$SCHED_DIR"
-    ln -sf "$(realpath --relative-to="$SCHED_DIR" "$GKI_ROOT/EVA/kernel")" "eva" && echo "[+] Symlink eva created."
+    mkdir -p "$SCHED_DIR/eva"
+    cd "$SCHED_DIR/eva"
+    ln -sf "$(realpath --relative-to="$SCHED_DIR/eva" "$GKI_ROOT/EVA/kernel/eva.c")" "eva.c"
+    ln -sf "$(realpath --relative-to="$SCHED_DIR/eva" "$GKI_ROOT/EVA/kernel/eva.h")" "eva.h"
+    ln -sf "$(realpath --relative-to="$SCHED_DIR/eva" "$GKI_ROOT/EVA/kernel/Makefile")" "Makefile"
+    ln -sf "$(realpath --relative-to="$SCHED_DIR/eva" "$GKI_ROOT/EVA/kernel/Kconfig")" "Kconfig"
+    echo "[+] Symlinks created."
     
-    # Add entries in Makefile and Kconfig if not already existing
-    grep -q "eva/" "$SCHED_MAKEFILE" || printf "\nobj-y += eva/\n" >> "$SCHED_MAKEFILE" && echo "[+] Modified Makefile."
+    # Add entries in Makefile smartly
+    if ! grep -q "obj-y += eva/" "$SCHED_MAKEFILE"; then
+        echo "" >> "$SCHED_MAKEFILE"
+        echo "# E.V.A" >> "$SCHED_MAKEFILE"
+        echo "obj-y += eva/" >> "$SCHED_MAKEFILE"
+        echo "[+] Modified Makefile."
+    fi
     
     if ! grep -q "source \"kernel/sched/eva/Kconfig\"" "$KCONFIG_TARGET"; then
         sed -i "/endmenu/i\source \"kernel/sched/eva/Kconfig\"" "$KCONFIG_TARGET" 2>/dev/null || echo "source \"kernel/sched/eva/Kconfig\"" >> "$KCONFIG_TARGET"
         echo "[+] Modified Kconfig."
+    fi
+
+    # Auto-patch defconfigs
+    if ls "$GKI_ROOT"/arch/arm64/configs/*defconfig* 1> /dev/null 2>&1; then
+        for defconfig in "$GKI_ROOT"/arch/arm64/configs/*defconfig*; do
+            if [ -f "$defconfig" ] && ! grep -q "CONFIG_SCHED_EVA" "$defconfig"; then
+                echo "" >> "$defconfig"
+                echo "# E.V.A" >> "$defconfig"
+                echo "CONFIG_SCHED_EVA=y" >> "$defconfig"
+                echo "[+] Patched defconfig: $(basename "$defconfig")"
+            fi
+        done
     fi
     
     echo '[+] Done.'
