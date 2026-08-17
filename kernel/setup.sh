@@ -21,11 +21,7 @@ initialize_variables() {
 
     SCHED_MAKEFILE=$SCHED_DIR/Makefile
     
-    if [ -f "$GKI_ROOT/kernel/Kconfig.preempt" ]; then
-        KCONFIG_TARGET="$GKI_ROOT/kernel/Kconfig.preempt"
-    else
-        KCONFIG_TARGET="$GKI_ROOT/init/Kconfig"
-    fi
+    KCONFIG_TARGET=$GKI_ROOT/init/Kconfig
 }
 
 # Reverts modifications made by this script
@@ -79,7 +75,7 @@ setup_eva() {
     fi
     
     if ! grep -q "source \"kernel/sched/eva/Kconfig\"" "$KCONFIG_TARGET"; then
-        sed -i "/endmenu/i\source \"kernel/sched/eva/Kconfig\"" "$KCONFIG_TARGET" 2>/dev/null || echo "source \"kernel/sched/eva/Kconfig\"" >> "$KCONFIG_TARGET"
+        echo "source \"kernel/sched/eva/Kconfig\"" >> "$KCONFIG_TARGET"
         echo "[+] Modified Kconfig."
     fi
     
