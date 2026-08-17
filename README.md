@@ -34,23 +34,6 @@ E.V.A/
     `-- service.sh          (Startup script to launch evadaemon and monitor state)
 ```
 
-## Roadmap
-
-Phase 1: Foundation (Completed)
-- Implement autonomous PID thread tracking inside the kernel scheduler.
-- Build the Rust-based daemon for accurate foreground app detection.
-- Develop the KernelSU Web UI for parameter adjustments.
-
-Phase 2: Efficiency and Refinement (Current)
-- Isolate the kernel directory structure for cleaner integration (setup.sh improvements).
-- Optimize polling intervals from hardcoded limits to user-configurable sysctl parameters.
-- Migrate daemon and UI communication to asynchronous execution for lower overhead.
-
-Phase 3: Advanced Optimization (Planned)
-- Implement dynamic thermal-aware scheduling to prevent extreme throttling.
-- Expand support for multi-cluster CPU topologies (e.g., Triple-cluster ARM v9 architectures).
-- Integrate automated benchmark detection profiles.
-
 ## Kernel Implementation
 
 To implement E.V.A in your kernel tree, simply run the automated setup script from the root of your kernel source tree:
