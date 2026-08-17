@@ -38,17 +38,6 @@ perform_cleanup() {
     # Revert Kconfig source inclusion
     grep -q "kernel/sched/eva/Kconfig" "$KCONFIG_TARGET" && sed -i '/kernel\/sched\/eva\/Kconfig/d' "$KCONFIG_TARGET" && echo "[-] Kconfig reverted."
 
-    # Revert defconfigs
-    if ls "$GKI_ROOT"/arch/arm64/configs/*defconfig* 1> /dev/null 2>&1; then
-        for defconfig in "$GKI_ROOT"/arch/arm64/configs/*defconfig*; do
-            if [ -f "$defconfig" ] && grep -q "CONFIG_SCHED_EVA=y" "$defconfig"; then
-                sed -i '/# E.V.A/d' "$defconfig"
-                sed -i '/CONFIG_SCHED_EVA=y/d' "$defconfig"
-                echo "[-] Reverted defconfig: $(basename "$defconfig")"
-            fi
-        done
-    fi
-
     if [ -d "$GKI_ROOT/EVA" ]; then
         rm -rf "$GKI_ROOT/EVA" && echo "[-] EVA directory deleted."
     fi
@@ -97,18 +86,6 @@ setup_eva() {
     if ! grep -q "source \"kernel/sched/eva/Kconfig\"" "$KCONFIG_TARGET"; then
         sed -i "/endmenu/i\source \"kernel/sched/eva/Kconfig\"" "$KCONFIG_TARGET" 2>/dev/null || echo "source \"kernel/sched/eva/Kconfig\"" >> "$KCONFIG_TARGET"
         echo "[+] Modified Kconfig."
-    fi
-
-    # Auto-patch defconfigs
-    if ls "$GKI_ROOT"/arch/arm64/configs/*defconfig* 1> /dev/null 2>&1; then
-        for defconfig in "$GKI_ROOT"/arch/arm64/configs/*defconfig*; do
-            if [ -f "$defconfig" ] && ! grep -q "CONFIG_SCHED_EVA" "$defconfig"; then
-                echo "" >> "$defconfig"
-                echo "# E.V.A" >> "$defconfig"
-                echo "CONFIG_SCHED_EVA=y" >> "$defconfig"
-                echo "[+] Patched defconfig: $(basename "$defconfig")"
-            fi
-        done
     fi
     
     echo '[+] Done.'
