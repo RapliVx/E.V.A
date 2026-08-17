@@ -67,4 +67,5 @@ This project touches critical system components including the CPU scheduler and 
 
 This project is licensed under the GNU General Public License v2.0 (GPL).
 Copyright (c) xMikkkaa
+
 Copyright (c) RapliVx
