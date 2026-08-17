@@ -62,3 +62,9 @@ The KernelSU module can be compiled using the provided GitHub Actions workflow.
 ## Disclaimer
 
 This project touches critical system components including the CPU scheduler and thermal mitigation systems. Misuse of features like thermal spoofing can cause permanent hardware damage. Use entirely at your own risk.
+
+## License
+
+This project is licensed under the GNU General Public License v2.0 (GPL).
+Copyright (c) xMikkkaa
+Copyright (c) RapliVx
