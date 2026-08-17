@@ -69,10 +69,10 @@ setup_eva() {
     
     mkdir -p "$SCHED_DIR/eva"
     cd "$SCHED_DIR/eva"
-    ln -sf "$(realpath --relative-to="$SCHED_DIR/eva" "$GKI_ROOT/EVA/kernel/eva.c")" "eva.c"
-    ln -sf "$(realpath --relative-to="$SCHED_DIR/eva" "$GKI_ROOT/EVA/kernel/eva.h")" "eva.h"
-    ln -sf "$(realpath --relative-to="$SCHED_DIR/eva" "$GKI_ROOT/EVA/kernel/Makefile")" "Makefile"
-    ln -sf "$(realpath --relative-to="$SCHED_DIR/eva" "$GKI_ROOT/EVA/kernel/Kconfig")" "Kconfig"
+    ln -sf "../../../EVA/kernel/eva.c" "eva.c"
+    ln -sf "../../../EVA/kernel/eva.h" "eva.h"
+    ln -sf "../../../EVA/kernel/Makefile" "Makefile"
+    ln -sf "../../../EVA/kernel/Kconfig" "Kconfig"
     echo "[+] Symlinks created."
     
     # Add entries in Makefile smartly
