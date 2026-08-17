@@ -31,7 +31,7 @@ initialize_variables() {
 # Reverts modifications made by this script
 perform_cleanup() {
     echo "[+] Cleaning up..."
-    [ -d "$SCHED_DIR/eva" ] && rm -rf "$SCHED_DIR/eva" && echo "[-] eva directory removed."
+    [ -L "$SCHED_DIR/eva" ] && rm "$SCHED_DIR/eva" && echo "[-] Symlink removed."
     grep -q "# E.V.A" "$SCHED_MAKEFILE" && sed -i '/# E.V.A/d' "$SCHED_MAKEFILE"
     grep -q "eva/" "$SCHED_MAKEFILE" && sed -i '/eva\//d' "$SCHED_MAKEFILE" && echo "[-] Makefile reverted."
     
@@ -67,15 +67,10 @@ setup_eva() {
         git checkout "$1" && echo "[-] Checked out $1." || echo "[-] Checkout default branch"
     fi
     
-    mkdir -p "$SCHED_DIR/eva"
-    cd "$SCHED_DIR/eva"
-    ln -sf "../../../EVA/kernel/eva.c" "eva.c"
-    ln -sf "../../../EVA/kernel/eva.h" "eva.h"
-    ln -sf "../../../EVA/kernel/Makefile" "Makefile"
-    ln -sf "../../../EVA/kernel/Kconfig" "Kconfig"
-    echo "[+] Symlinks created."
+    cd "$SCHED_DIR"
+    ln -sf "$(realpath --relative-to="$SCHED_DIR" "$GKI_ROOT/EVA/kernel")" "eva" && echo "[+] Symlink created."
     
-    # Add entries in Makefile smartly
+    # Add entries in Makefile
     if ! grep -q "obj-y += eva/" "$SCHED_MAKEFILE"; then
         echo "" >> "$SCHED_MAKEFILE"
         echo "# E.V.A" >> "$SCHED_MAKEFILE"
