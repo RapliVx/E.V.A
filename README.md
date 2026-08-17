@@ -2,50 +2,79 @@
 
 E.V.A is an advanced performance optimizer designed for Android devices, integrating a custom kernel driver with a robust KernelSU module. The primary goal is to provide dynamic, autonomous performance tuning based on process identifiers (PID) and system state, specifically tailored for intensive workloads such as gaming.
 
-## Architecture
+## How It Works
 
-E.V.A consists of three primary components:
+E.V.A operates by intercepting the standard Linux Completely Fair Scheduler (CFS) and forcing rendering threads to run on the most capable CPU cores (Big/Prime cores). It works through a continuous cycle:
 
-1.  **Kernel Modifications (C)**:
-    Located in the `kernel/` directory. This includes modifications to the CPU scheduler (`eva.c`) to provide aggressive performance scaling based on the targeted PID.
-2.  **User-Space Daemon (Rust)**:
-    A lightweight, memory-safe, and highly efficient background service written in Rust. It utilizes Android's `dumpsys window` command and `procfs` to actively monitor the foreground application. If the active application matches the user-defined `PackageList.txt`, the daemon injects its PID into the E.V.A kernel node (`kernel.sched_eva_pid`).
-3.  **KernelSU Module & WebUI (JavaScript/HTML)**:
-    A fully integrated root module and an elegant Web UI dashboard designed with Material 3. The interface allows users to manage their target applications, toggle performance modes, apply network optimizations, and spoof battery thermal readings.
+1. Application Detection: The Rust-based user-space daemon (`evadaemon`) constantly monitors the foreground application state using Android's internal window manager dumps and procfs.
+2. PID Injection: When a targeted application (defined in `PackageList.txt`) is brought to the foreground, the daemon extracts its PID and injects it directly into the kernel via a sysctl node (`kernel.sched_eva_pid`).
+3. Autonomous Kernel Tracking: Once the kernel scheduler receives the target PID, E.V.A's kernel driver hooks into `trace_sched_process_fork` and `trace_sched_process_exit`. It automatically maps all child threads spawned by the main application.
+4. Smart CPU Affinity: A delayed workqueue (Smart Polling) regularly evaluates the utilization of the tracked threads. It forcefully overrides CPU masks and adjusts nice values, guaranteeing that heavy rendering tasks are processed by the fastest available CPU cluster, eliminating micro-stutters.
+5. Standby Mode: When the application is closed or moved to the background, the daemon resets the PID. The kernel clears its tracking list and gracefully returns scheduling control to the default CFS behavior to save battery.
+
+## Project Map
+
+The project is structured into two main layers: the Kernel subsystem and the User-Space module.
+
+```text
+E.V.A/
+|-- kernel/
+|   |-- Kconfig             (Kernel configuration flag definition)
+|   |-- Makefile            (Kernel build system integration)
+|   |-- eva.c               (Core scheduler tracking and affinity logic)
+|   |-- eva.h               (Header definitions and global variables)
+|   `-- setup.sh            (Automated script to symlink E.V.A into a kernel tree)
+|
+`-- module/
+    |-- evadaemon_src/      (Rust source code for the background daemon)
+    |-- webroot/            (HTML/JS/CSS for the KernelSU Web UI Dashboard)
+    |-- PackageList.txt     (Target package list for the daemon)
+    |-- customize.sh        (KernelSU installation script)
+    |-- module.prop         (Module metadata and status indicator)
+    `-- service.sh          (Startup script to launch evadaemon and monitor state)
+```
+
+## Roadmap
+
+Phase 1: Foundation (Completed)
+- Implement autonomous PID thread tracking inside the kernel scheduler.
+- Build the Rust-based daemon for accurate foreground app detection.
+- Develop the KernelSU Web UI for parameter adjustments.
+
+Phase 2: Efficiency and Refinement (Current)
+- Isolate the kernel directory structure for cleaner integration (setup.sh improvements).
+- Optimize polling intervals from hardcoded limits to user-configurable sysctl parameters.
+- Migrate daemon and UI communication to asynchronous execution for lower overhead.
+
+Phase 3: Advanced Optimization (Planned)
+- Implement dynamic thermal-aware scheduling to prevent extreme throttling.
+- Expand support for multi-cluster CPU topologies (e.g., Triple-cluster ARM v9 architectures).
+- Integrate automated benchmark detection profiles.
 
 ## Kernel Implementation
 
-To implement  E.V.A in your kernel tree, simply run the automated setup script from the root of your kernel source tree:
+To implement E.V.A in your kernel tree, simply run the automated setup script from the root of your kernel source tree:
 
 ```bash
-bash <(curl -sL https://raw.githubusercontent.com/RapliVx/E.V.A/main/setup.sh)
+cd /path/to/your/kernel/source
+bash /path/to/EVA/kernel/setup.sh
 ```
 
 The setup script will automatically:
-- Download the required `eva.c` and `eva.h` files.
+- Create a symlink of the `kernel/` directory into `kernel/sched/eva/`.
 - Patch your `kernel/sched/Makefile` to include the driver.
-- Inject the `CONFIG_SCHED_EVA` entry into your `init/Kconfig` or `kernel/Kconfig.preempt`.
+- Inject the `CONFIG_SCHED_EVA` entry into your Kconfig.
 
 After running the script, ensure that your kernel defconfig includes `CONFIG_SCHED_EVA=y`.
-
-## Module Structure
-
-The KSU module is located in the `module/` directory.
--   `evadaemon_src/`: The Rust source code for the background service.
--   `webroot/`: The front-end files for the KernelSU WebUI.
--   `PackageList.txt`: A plain-text list of application package names targeted for auto-boosting.
--   `customize.sh`: The installation script handling the initial synchronization of installed packages against the target list.
 
 ## Compilation
 
 The KernelSU module can be compiled using the provided GitHub Actions workflow.
 
-1.  The workflow automatically provisions an Ubuntu runner with the Android NDK and Rust toolchain.
-2.  It compiles the Rust daemon (`evadaemon_src`) using `cargo-ndk` for the `aarch64-linux-android` target.
-3.  The resulting binary is placed into the root of the module directory as `eva_daemon`.
-4.  The entire `module/` directory (excluding source code files) is packaged into a flashable ZIP file.
-
-You can download the compiled ZIP file from the Artifacts section of the GitHub Actions run.
+1. The workflow automatically provisions an Ubuntu runner with the Android NDK and Rust toolchain.
+2. It caches dependencies and compiles the Rust daemon (`evadaemon_src`) using `cargo-ndk` for the `aarch64-linux-android` target.
+3. The resulting binary is placed into the root of the module directory as `eva_daemon`.
+4. The GitHub Actions artifact step directly packages the `module/` directory into a ready-to-flash ZIP file.
 
 ## Disclaimer
 
